@@ -1,0 +1,2 @@
+include ':app', ':testframework'
+rootProject.name='TestSDKPush'
