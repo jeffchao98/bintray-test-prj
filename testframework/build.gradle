@@ -10,7 +10,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 29
         versionCode 1
-        versionName "0.5.3"
+        versionName "0.5.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -39,7 +39,7 @@ publish {
     repoName= 'mytestlib'
     groupId = 'com.scaine.testframework'
     artifactId = 'bintray-test-prj'
-    publishVersion = '0.5.3'
+    publishVersion = '0.5.4'
     desc = 'Oh hi, this is a nice description for a project, right?'
     website = ''
 }

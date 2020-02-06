@@ -5,9 +5,9 @@ import com.google.gson.reflect.TypeToken;
 
 public class MainPart {
     public String getName() {
-        String jsonData = "{\"name\":\"MainPart item\" , \"state\": \"unknown\", \"mood\": \"HaHa\"}";
+        String jsonData = "{\"name\":\"MainPart item\" , \"state\": \"alive state\", \"mood\": \"HaHa\"}";
         DataModel dataModel = new Gson().fromJson(jsonData, new TypeToken<DataModel>() {
         }.getType());
-        return dataModel.mood;
+        return dataModel.state;
     }
 }
