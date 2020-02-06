@@ -7,4 +7,5 @@ public class DataModel {
     String strName = "";
 
     String state = "";
+    String mood = "";
 }
