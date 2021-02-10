@@ -4,8 +4,8 @@ import com.google.gson.annotations.SerializedName;
 
 public class DataModel {
     @SerializedName("name")
-    String strName = "";
+    public String strName = "";
 
-    String state = "";
-    String mood = "";
+    public String state = "";
+    public String mood = "";
 }
