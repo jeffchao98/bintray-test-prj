@@ -13,7 +13,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 29
         versionCode 1
-        versionName "0.5.8.8"
+        versionName "0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -41,144 +41,82 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
 }
 
-
-version = "1.2.3"
-group = "com.scchao"
-
-def configurePom(pom) {
-    pom.name = "POM_NAME"
-    pom.packaging = "POM_PACKAGING"
-    pom.description = "POM_DESCRIPTION"
-    pom.url = "POM_URL"
-
-    pom.scm {
-        url = "POM_SCM_URL"
-        connection = "POM_SCM_CONNECTION"
-        developerConnection = "POM_SCM_DEV_CONNECTION"
-    }
-
-    pom.licenses {
-        license {
-            name = "POM_LICENCE_NAME"
-            url = "POM_LICENCE_URL"
-            distribution = "POM_LICENCE_DIST"
-        }
-    }
-
-    pom.developers {
-        developer {
-            id = "POM_DEVELOPER_ID"
-            name = "POM_DEVELOPER_NAME"
-        }
-    }
-}
-
 task androidJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.source
+    source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    excludes = ['**/*.kt']
-}
-task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    from androidJavadocs.destinationDir
-    classifier "javadoc"
-}
-task sourceJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier "sources"
-}
-publishing {
-    publications {
-        testframework(MavenPublication) {
-            groupId 'com.scaine'
-            artifactId 'bintray-test-prj'
-            version '0.1'
-            artifact(sourceJar)
-            artifact(androidJavadocsJar)
-            artifact("$buildDir/outputs/aar/testframework-release.aar")
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompile.classpath
         }
     }
-    repositories {
-        maven {
-            url "$buildDir/repo"
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+project.afterEvaluate {
+    publishing {
+        publications {
+            testframework(MavenPublication) {
+                groupId 'com.scaine'
+                artifactId 'bintray-test-prj'
+                version '0.3'
+                artifact androidJavadocsJar
+                artifact androidSourcesJar
+                artifact("$buildDir/outputs/aar/testframework-release.aar")
+                pom.withXml {
+                    final dependenciesNode = asNode().appendNode('dependencies')
+
+                    ext.addDependency = { Dependency dep, String scope ->
+                        if (dep.group == null || dep.version == null || dep.name == null || dep.name == "unspecified")
+                            return // ignore invalid dependencies
+
+                        final dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', dep.group)
+                        dependencyNode.appendNode('artifactId', dep.name)
+                        dependencyNode.appendNode('version', dep.version)
+                        dependencyNode.appendNode('scope', scope)
+
+                        if (!dep.transitive) {
+                            // If this dependency is transitive, we should force exclude all its dependencies them from the POM
+                            final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', '*')
+                            exclusionNode.appendNode('artifactId', '*')
+                        } else if (!dep.properties.excludeRules.empty) {
+                            // Otherwise add specified exclude rules
+                            final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
+                            dep.properties.excludeRules.each { ExcludeRule rule ->
+                                exclusionNode.appendNode('groupId', rule.group ?: '*')
+                                exclusionNode.appendNode('artifactId', rule.module ?: '*')
+                            }
+                        }
+                    }
+
+                    // List all "compile" dependencies (for old Gradle)
+                    configurations.compile.getDependencies().each { dep -> addDependency(dep, "compile") }
+                    // List all "api" dependencies (for new Gradle) as "compile" dependencies
+                    configurations.api.getDependencies().each { dep -> addDependency(dep, "compile") }
+                    // List all "implementation" dependencies (for new Gradle) as "runtime" dependencies
+                    configurations.implementation.getDependencies().each { dep -> addDependency(dep, "runtime") }
+                }
+            }
+        }
+        repositories {
+            maven {
+                url "$buildDir/repo"
+            }
         }
     }
 }
 
-//afterEvaluate { project ->
-//    publishing {
-//        repositories {
-//            maven {
-//                url "$buildDir/repo"
-//            }
-//        }
-//    }
-//
-//    if (project.getPlugins().hasPlugin('com.android.application') ||
-//            project.getPlugins().hasPlugin('com.android.library')) {
-//
-//        task androidJavadocs(type: Javadoc) {
-//            source = android.sourceSets.main.java.source
-//            classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-//            excludes = ['**/*.kt']
-//        }
-//
-//        task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-//            classifier = 'javadoc'
-//            from androidJavadocs.destinationDir
-//        }
-//
-//        task androidSourcesJar(type: Jar) {
-//            classifier = 'sources'
-//            from android.sourceSets.main.java.source
-//        }
-//    }
-//
-//    if (JavaVersion.current().isJava8Compatible()) {
-//        allprojects {
-//            tasks.withType(Javadoc) {
-//                options.addStringOption('Xdoclint:none', '-quiet')
-//            }
-//        }
-//    }
-//
-//    if (JavaVersion.current().isJava9Compatible()) {
-//        allprojects {
-//            tasks.withType(Javadoc) {
-//                options.addBooleanOption('html5', true)
-//            }
-//        }
-//    }
-//
-//    artifacts {
-//        if (project.getPlugins().hasPlugin('com.android.application') ||
-//                project.getPlugins().hasPlugin('com.android.library')) {
-//            archives androidSourcesJar
-//            archives androidJavadocsJar
-//        }
-//    }
-//
-//    android.libraryVariants.all { variant ->
-//        tasks.androidJavadocs.doFirst {
-//            classpath += files(variant.javaCompileProvider.get().classpath.files.join(File.pathSeparator))
-//        }
-//    }
-//
-//    publishing.publications.all { publication ->
-//        publication.groupId = GROUP
-//        publication.version = VERSION_NAME
-//
-//        publication.artifact androidSourcesJar
-//        publication.artifact androidJavadocsJar
-//
-//        configurePom(publication.pom)
-//    }
-//
-//    signing {
-//        publishing.publications.all { publication ->
-//            sign publication
-//        }
-//    }
-//}
+
 //publish {
 //    userOrg = 'jeffchao98'
 //    repoName= 'mytestlib'
