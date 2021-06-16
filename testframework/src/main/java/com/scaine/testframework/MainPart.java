@@ -16,4 +16,7 @@ public class MainPart {
     public String getState() {
         return dataModel.state;
     }
+    public String getVersion() {
+        return BuildConfig.VERSION_NAME;
+    }
 }
