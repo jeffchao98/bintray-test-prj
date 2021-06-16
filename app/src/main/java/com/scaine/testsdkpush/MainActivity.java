@@ -17,7 +17,9 @@ public class MainActivity extends AppCompatActivity {
         MainPart mainPart = new MainPart();
         DataModel data = mainPart.getParserData();
         String name = data.strName;
+        String version = mainPart.getVersion();
 
-        Log.i("test out", name);
+        Log.i("test-out", name);
+        Log.i("test-out-version", version);
     }
 }
